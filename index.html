@@ -124,15 +124,18 @@ button:hover {
 
   <div class="grid">
     <div class="box">
-      <label>Terminübersicht</label>
-      <textarea id="input" placeholder="Datum	...	...	...	Betreff"></textarea>
+      <label>Excel-Daten (Copy & Paste)</label>
+      <textarea id="input" placeholder="Beginn Datum - Beginn Uhrzeit - Ende Datum - Ende Uhrzeit - Betreff - Aktion"></textarea>
     </div>
 
     <div class="box">
       <label>Ergebnis (automatisch kopiert)</label>
-      <textarea id="output" readonly></textarea>
+      <textarea id="output" placeholder="KW ...
+-Betreff
+
+KW ...
+-Betreff" readonly></textarea>
     </div>
-  </div>
 
   <div class="actions">
     <button onclick="formatText()">Formatieren</button>
@@ -217,5 +220,6 @@ document.getElementById("input").addEventListener("input", () => {
 
 </body>
 </html>
+
 
 
