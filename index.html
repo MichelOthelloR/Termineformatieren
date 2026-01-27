@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Excel KW Formatter</title>
+<style>
+:root {
+  --bg: #0f172a;
+  --card: #111827;
+  --accent: #3b82f6;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --border: #1f2933;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+}
+
+body {
+  background: linear-gradient(135deg, #020617, #020617);
+  color: var(--text);
+  margin: 0;
+  padding: 40px;
+  display: flex;
+  justify-content: center;
+}
+
+.app {
+  width: 100%;
+  max-width: 1000px;
+  background: var(--card);
+  border-radius: 16px;
+  padding: 24px 28px 28px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  border: 1px solid var(--border);
+}
+
+h1 {
+  font-size: 22px;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.box {
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-size: 13px;
+  margin-bottom: 6px;
+  color: var(--muted);
+}
+
+textarea {
+  background: #020617;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  min-height: 220px;
+  resize: vertical;
+  outline: none;
+  transition: 0.2s;
+  font-size: 14px;
+}
+
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  margin-top: 14px;
+  gap: 10px;
+}
+
+button {
+  background: var(--accent);
+  border: none;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.status {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.status.success {
+  color: #22c55e;
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <h1>Excel → KW Formatter</h1>
+  <div class="subtitle">Excel-Daten einfügen → automatisch formatiert & kopiert</div>
+
+  <div class="grid">
+    <div class="box">
+      <label>Excel-Daten (Copy & Paste)</label>
+      <textarea id="input" placeholder="Datum	...	...	...	Betreff"></textarea>
+    </div>
+
+    <div class="box">
+      <label>Ergebnis (automatisch kopiert)</label>
+      <textarea id="output" readonly></textarea>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button onclick="formatText()">Formatieren</button>
+    <div id="status" class="status"></div>
+  </div>
+</div>
+
+<script>
+function getISOWeek(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    const status = document.getElementById("status");
+    status.textContent = "✔ Text automatisch kopiert";
+    status.classList.add("success");
+    setTimeout(() => {
+      status.textContent = "";
+      status.classList.remove("success");
+    }, 2000);
+  } catch (err) {
+    console.error("Copy failed:", err);
+  }
+}
+
+function formatText() {
+  const input = document.getElementById("input").value.trim();
+  if (!input) return;
+
+  const rows = input.split("\n");
+  let entries = [];
+
+  for (let row of rows) {
+    const cols = row.split("\t");
+    if (cols.length < 5) continue;
+
+    const dateStr = cols[0].trim();
+    const subjectRaw = cols[4].trim();
+
+    const date = new Date(dateStr);
+    if (isNaN(date)) continue;
+
+    let subject = subjectRaw.includes(" ")
+      ? subjectRaw.substring(subjectRaw.indexOf(" ") + 1)
+      : subjectRaw;
+
+    const kw = getISOWeek(date);
+
+    entries.push({ kw, subject });
+  }
+
+  const groups = {};
+  for (let e of entries) {
+    if (!groups[e.kw]) groups[e.kw] = [];
+    groups[e.kw].push(e.subject);
+  }
+
+  const sortedKW = Object.keys(groups).map(Number).sort((a, b) => a - b);
+
+  let result = sortedKW.map(kw => {
+    const lines = groups[kw].map(s => "- " + s).join("\n");
+    return "KW " + kw + "\n" + lines;
+  }).join("\n\n");
+
+  const output = document.getElementById("output");
+  output.value = result;
+
+  copyToClipboard(result);
+}
+
+// Bonus: Auto-Format beim Einfügen
+document.getElementById("input").addEventListener("input", () => {
+  formatText();
+});
+</script>
+
+</body>
+</html>
