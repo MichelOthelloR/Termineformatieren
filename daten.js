@@ -45,4 +45,3 @@ const BESCHREIBUNGEN_DB = {
   "Zeitmanagement": "Zusatz: Vereinbarkeit von Beruf und Familie sowie individuelle Parameter zur Umstellung.",
   "Zeitmanagement / Stressmanagement": "Zusatz: Umgang mit Deadlines und Familienalltag zur Vermeidung von Burnout."
 };
-};
