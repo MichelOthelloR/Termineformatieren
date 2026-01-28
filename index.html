@@ -2,279 +2,120 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Termin-Formatierer Pro - Debug Version</title>
-<script src="./daten.js"></script>
+<title>Termin-Formatierer Pro - GitHub Version</title>
 <style>
 :root {
-  --bg: #0f172a;
-  --card: #111827;
-  --accent: #3b82f6;
-  --text: #e5e7eb;
-  --muted: #9ca3af;
-  --border: #1f2933;
+  --bg: #0f172a; --card: #111827; --accent: #3b82f6; --text: #e5e7eb; --muted: #9ca3af; --border: #1f2933;
 }
-
-* { box-sizing: border-box; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  margin: 0;
-  padding: 40px;
-  display: flex;
-  justify-content: center;
-}
-
-.app {
-  width: 100%;
-  max-width: 1000px;
-  background: var(--card);
-  border-radius: 16px;
-  padding: 28px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-  border: 1px solid var(--border);
-}
-
-.header-area {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 20px;
-}
-
-.title-container { display: flex; flex-direction: column; }
-h1 { font-size: 22px; margin: 0 0 4px 0; }
-.subtitle { color: var(--muted); font-size: 14px; margin: 0; }
-
-/* Verbindungskontrolle Anzeige */
-#db-status-badge {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 11px;
-  margin-top: 8px;
-  font-weight: bold;
-}
-.status-online { background: #065f46; color: #34d399; }
-.status-offline { background: #991b1b; color: #f87171; }
-
+* { box-sizing: border-box; font-family: 'Inter', sans-serif; }
+body { background: var(--bg); color: var(--text); padding: 40px; display: flex; justify-content: center; }
+.app { width: 100%; max-width: 1000px; background: var(--card); border-radius: 16px; padding: 28px; border: 1px solid var(--border); }
+.header-area { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
 .logo { width: 130px; height: 130px; object-fit: contain; }
-
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
-.box { display: flex; flex-direction: column; }
-label { font-size: 13px; margin-bottom: 8px; color: var(--muted); font-weight: 600; }
-
-textarea {
-  background: #020617;
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 14px;
-  min-height: 400px;
-  resize: vertical;
-  outline: none;
-  transition: 0.2s;
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-textarea:focus { border-color: var(--accent); }
-
-/* Bereich für die Datenbank-Vorschau */
-.debug-area {
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 1px dashed var(--border);
-}
-
-#debug-output {
-  background: #000;
-  color: #a5f3fc;
-  font-family: 'Courier New', monospace;
-  font-size: 12px;
-  white-space: pre-wrap;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 15px;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.actions { display: flex; align-items: center; margin-top: 20px; gap: 15px; }
-
-button {
-  background: var(--accent);
-  border: none;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 10px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.status { font-size: 13px; font-weight: 500; }
-.status.success { color: #22c55e; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+textarea { background: #020617; color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 14px; min-height: 400px; width: 100%; font-size: 13px; line-height: 1.6; }
+.debug-area { margin-top: 30px; padding-top: 20px; border-top: 1px dashed var(--border); }
+#debug-output { background: #000; color: #a5f3fc; font-family: monospace; font-size: 12px; white-space: pre-wrap; padding: 15px; border-radius: 10px; max-height: 200px; overflow-y: auto; }
+button { background: var(--accent); border: none; color: white; padding: 12px 24px; border-radius: 10px; cursor: pointer; font-weight: 600; margin-top: 20px; }
+.status { font-size: 13px; margin-left: 15px; }
 </style>
 </head>
 <body>
 
 <div class="app">
   <div class="header-area">
-    <div class="title-container">
+    <div>
       <h1>Terminübersicht aufbereiten</h1>
-      <div class="subtitle">Formatierung mit Datenbank-Check</div>
-      <div id="db-status-badge">Prüfe Verbindung zur daten.js...</div>
+      <p style="color:var(--muted)">GitHub Modul-Version (Chronologisch + Beschreibungen)</p>
     </div>
     <img src="icon_website.png" alt="Logo" class="logo">
   </div>
 
   <div class="grid">
-    <div class="box">
-      <label>Eingabe (Excel-Daten)</label>
-      <textarea id="input" placeholder="Hier die Excel-Tabelle einfügen..."></textarea>
-    </div>
-
-    <div class="box">
-      <label>Ergebnis (automatisch kopiert)</label>
-      <textarea id="output" readonly placeholder="KW-Übersicht wird hier generiert..."></textarea>
-    </div>
+    <div class="box"><label>Eingabe</label><textarea id="input"></textarea></div>
+    <div class="box"><label>Ergebnis</label><textarea id="output" readonly></textarea></div>
   </div>
 
-  <div class="actions">
-    <button onclick="formatText()">Manuell Formatieren</button>
-    <div id="status" class="status"></div>
-  </div>
+  <button onclick="formatText()">Formatieren</button>
+  <span id="status" class="status"></span>
 
   <div class="debug-area">
-    <label>Inhalt der geladenen daten.js (Test-Ansicht):</label>
-    <div id="debug-output">Die daten.js wurde nicht gefunden oder ist leer.</div>
+    <label>Geladene Datenbank:</label>
+    <div id="debug-output">Lade daten.js...</div>
   </div>
 </div>
 
-<script>
-/**
- * TEST: Überprüfung und Anzeige der geladenen Daten
- */
-window.addEventListener('DOMContentLoaded', () => {
-  const badge = document.getElementById('db-status-badge');
+<script type="module">
+  // Import der Datenbank vom selben Pfad
+  import { BESCHREIBUNGEN_DB } from './daten.js';
+
+  // Debug-Anzeige beim Start
   const debugOut = document.getElementById('debug-output');
-  
-  if (typeof BESCHREIBUNGEN_DB !== 'undefined' && Object.keys(BESCHREIBUNGEN_DB).length > 0) {
-    badge.textContent = "✔ daten.js verbunden";
-    badge.className = "status-online";
-    
-    // JSON schön formatiert anzeigen
-    debugOut.textContent = JSON.stringify(BESCHREIBUNGEN_DB, null, 4);
-  } else {
-    badge.textContent = "✖ daten.js NICHT gefunden";
-    badge.className = "status-offline";
-    debugOut.textContent = "Fehler: Die Variable BESCHREIBUNGEN_DB wurde nicht gefunden. Bitte prüfe, ob die daten.js im selben Ordner liegt.";
-  }
-});
+  debugOut.textContent = JSON.stringify(BESCHREIBUNGEN_DB, null, 4);
 
-const db = typeof BESCHREIBUNGEN_DB !== 'undefined' ? BESCHREIBUNGEN_DB : {};
-
-function getISOWeekData(date) {
-  const tempDate = new Date(date.valueOf());
-  tempDate.setHours(0, 0, 0, 0);
-  tempDate.setDate(tempDate.getDate() + 4 - (tempDate.getDay() || 7));
-  const year = tempDate.getFullYear();
-  const yearStart = new Date(year, 0, 1);
-  const week = Math.ceil((((tempDate - yearStart) / 86400000) + 1) / 7);
-  return { year, week };
-}
-
-function parseGermanDate(dateStr) {
-  if (!dateStr) return null;
-  const parts = dateStr.trim().split('.');
-  if (parts.length === 3) {
-    let year = parts[2].trim();
-    if (year.length === 2) year = "20" + year;
-    return new Date(year, parts[1] - 1, parts[0]);
-  }
-  const isoDate = new Date(dateStr);
-  return isNaN(isoDate) ? null : isoDate;
-}
-
-async function copyToClipboard(text) {
-  if (!text) return;
-  try {
-    await navigator.clipboard.writeText(text);
-    const status = document.getElementById("status");
-    status.textContent = "✔ Kopiert";
-    status.classList.add("success");
-    setTimeout(() => {
-      status.textContent = "";
-      status.classList.remove("success");
-    }, 2000);
-  } catch (err) { console.error(err); }
-}
-
-function formatText() {
-  const input = document.getElementById("input").value.trim();
-  const outputField = document.getElementById("output");
-  
-  if (!input) {
-    outputField.value = "";
-    return;
+  // Hilfsfunktionen
+  function getISOWeekData(date) {
+    const tempDate = new Date(date.valueOf());
+    tempDate.setHours(0, 0, 0, 0);
+    tempDate.setDate(tempDate.getDate() + 4 - (tempDate.getDay() || 7));
+    const year = tempDate.getFullYear();
+    const yearStart = new Date(year, 0, 1);
+    const week = Math.ceil((((tempDate - yearStart) / 86400000) + 1) / 7);
+    return { year, week };
   }
 
-  const rows = input.split(/\r?\n/);
-  const groups = {};
-
-  rows.forEach(row => {
-    if (!row.trim()) return;
-    const cols = row.split("\t");
-    if (cols.length < 5) return;
-
-    const dateObj = parseGermanDate(cols[0]);
-    // Betreff säubern
-    let subject = cols[4].trim().replace(/^[\d./-]+\s*/, "");
-
-    if (dateObj && !isNaN(dateObj)) {
-      const { year, week } = getISOWeekData(dateObj);
-      const groupKey = `${year}-${week.toString().padStart(2, '0')}`;
-      if (!groups[groupKey]) {
-        groups[groupKey] = { year, week, entries: [] };
-      }
-      groups[groupKey].entries.push({ date: dateObj, text: subject });
+  function parseGermanDate(dateStr) {
+    const parts = dateStr.trim().split('.');
+    if (parts.length === 3) {
+      let year = parts[2].trim();
+      if (year.length === 2) year = "20" + year;
+      return new Date(year, parts[1] - 1, parts[0]);
     }
-  });
+    return null;
+  }
 
-  const sortedKeys = Object.keys(groups).sort();
+  // Die Hauptfunktion wird an 'window' gebunden, damit der HTML-Button sie findet
+  window.formatText = async function() {
+    const input = document.getElementById("input").value.trim();
+    if (!input) return;
 
-  const result = sortedKeys.map(key => {
-    const group = groups[key];
-    const sortedEntries = group.entries
-      .sort((a, b) => a.date - b.date)
-      .map(e => {
-        let entryText = "• " + e.text;
-        
-        // VERGLEICHS-LOGIK VERBESSERT:
-        // Wir trimmen beide Texte, um unsichtbare Leerzeichen zu ignorieren
-        const cleanKey = e.text.trim();
-        if (db[cleanKey]) {
-          entryText += "\n  " + db[cleanKey];
-        }
-        return entryText;
-      })
-      .join("\n");
-      
-    return `KW ${group.week}\n${sortedEntries}`;
-  }).join("\n\n");
+    const rows = input.split(/\r?\n/);
+    const groups = {};
 
-  outputField.value = result;
-  if (result) copyToClipboard(result);
-}
+    rows.forEach(row => {
+      const cols = row.split("\t");
+      if (cols.length < 5) return;
 
-document.getElementById("input").addEventListener("input", formatText);
+      const dateObj = parseGermanDate(cols[0]);
+      let subject = cols[4].trim().replace(/^[\d./-]+\s*/, "");
+
+      if (dateObj && !isNaN(dateObj)) {
+        const { year, week } = getISOWeekData(dateObj);
+        const groupKey = `${year}-${week.toString().padStart(2, '0')}`;
+        if (!groups[groupKey]) groups[groupKey] = { week, entries: [] };
+        groups[groupKey].entries.push({ date: dateObj, text: subject });
+      }
+    });
+
+    const result = Object.keys(groups).sort().map(key => {
+      const g = groups[key];
+      const lines = g.entries.sort((a,b) => a.date - b.date).map(e => {
+        let line = "• " + e.text;
+        if (BESCHREIBUNGEN_DB[e.text.trim()]) line += "\n  " + BESCHREIBUNGEN_DB[e.text.trim()];
+        return line;
+      }).join("\n");
+      return `KW ${g.week}\n${lines}`;
+    }).join("\n\n");
+
+    document.getElementById("output").value = result;
+    await navigator.clipboard.writeText(result);
+    document.getElementById("status").textContent = "✔ Kopiert";
+    setTimeout(() => document.getElementById("status").textContent = "", 2000);
+  };
+
+  // Event Listener für Live-Update
+  document.getElementById("input").addEventListener("input", window.formatText);
 </script>
 
 </body>
 </html>
-
