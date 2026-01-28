@@ -2,7 +2,8 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Termin-Formatierer Pro</title>
+<title>Termin-Formatierer Pro - Debug Version</title>
+<script src="daten.js"></script>
 <style>
 :root {
   --bg: #0f172a;
@@ -45,11 +46,19 @@ body {
 h1 { font-size: 22px; margin: 0 0 4px 0; }
 .subtitle { color: var(--muted); font-size: 14px; margin: 0; }
 
-.logo {
-  width: 130px;
-  height: 130px;
-  object-fit: contain;
+/* Verbindungskontrolle Anzeige */
+#db-status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  margin-top: 8px;
+  font-weight: bold;
 }
+.status-online { background: #065f46; color: #34d399; }
+.status-offline { background: #991b1b; color: #f87171; }
+
+.logo { width: 130px; height: 130px; object-fit: contain; }
 
 .grid {
   display: grid;
@@ -66,22 +75,37 @@ textarea {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 14px;
-  min-height: 350px;
+  min-height: 400px;
   resize: vertical;
   outline: none;
   transition: 0.2s;
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
+textarea:focus { border-color: var(--accent); }
 
-.actions {
-  display: flex;
-  align-items: center;
-  margin-top: 20px;
-  gap: 15px;
+/* Bereich für die Datenbank-Vorschau */
+.debug-area {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px dashed var(--border);
 }
+
+#debug-output {
+  background: #000;
+  color: #a5f3fc;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 15px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.actions { display: flex; align-items: center; margin-top: 20px; gap: 15px; }
 
 button {
   background: var(--accent);
@@ -103,7 +127,8 @@ button {
   <div class="header-area">
     <div class="title-container">
       <h1>Terminübersicht aufbereiten</h1>
-      <div class="subtitle">Chronologische Sortierung über Jahresgrenzen hinweg.</div>
+      <div class="subtitle">Formatierung mit Datenbank-Check</div>
+      <div id="db-status-badge">Prüfe Verbindung zur daten.js...</div>
     </div>
     <img src="icon_website.png" alt="Logo" class="logo">
   </div>
@@ -111,12 +136,12 @@ button {
   <div class="grid">
     <div class="box">
       <label>Eingabe (Excel-Daten)</label>
-      <textarea id="input" placeholder="Hier die Tabelle einfügen..."></textarea>
+      <textarea id="input" placeholder="Hier die Excel-Tabelle einfügen..."></textarea>
     </div>
 
     <div class="box">
       <label>Ergebnis (automatisch kopiert)</label>
-      <textarea id="output" readonly placeholder="KW-Übersicht wird generiert..."></textarea>
+      <textarea id="output" readonly placeholder="KW-Übersicht wird hier generiert..."></textarea>
     </div>
   </div>
 
@@ -124,12 +149,36 @@ button {
     <button onclick="formatText()">Manuell Formatieren</button>
     <div id="status" class="status"></div>
   </div>
+
+  <div class="debug-area">
+    <label>Inhalt der geladenen daten.js (Test-Ansicht):</label>
+    <div id="debug-output">Die daten.js wurde nicht gefunden oder ist leer.</div>
+  </div>
 </div>
 
 <script>
 /**
- * Ermittelt Jahr und KW nach ISO-Standard
+ * TEST: Überprüfung und Anzeige der geladenen Daten
  */
+window.addEventListener('DOMContentLoaded', () => {
+  const badge = document.getElementById('db-status-badge');
+  const debugOut = document.getElementById('debug-output');
+  
+  if (typeof BESCHREIBUNGEN_DB !== 'undefined' && Object.keys(BESCHREIBUNGEN_DB).length > 0) {
+    badge.textContent = "✔ daten.js verbunden";
+    badge.className = "status-online";
+    
+    // JSON schön formatiert anzeigen
+    debugOut.textContent = JSON.stringify(BESCHREIBUNGEN_DB, null, 4);
+  } else {
+    badge.textContent = "✖ daten.js NICHT gefunden";
+    badge.className = "status-offline";
+    debugOut.textContent = "Fehler: Die Variable BESCHREIBUNGEN_DB wurde nicht gefunden. Bitte prüfe, ob die daten.js im selben Ordner liegt.";
+  }
+});
+
+const db = typeof BESCHREIBUNGEN_DB !== 'undefined' ? BESCHREIBUNGEN_DB : {};
+
 function getISOWeekData(date) {
   const tempDate = new Date(date.valueOf());
   tempDate.setHours(0, 0, 0, 0);
@@ -157,15 +206,13 @@ async function copyToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
     const status = document.getElementById("status");
-    status.textContent = "✔ In Zwischenablage kopiert";
+    status.textContent = "✔ Kopiert";
     status.classList.add("success");
     setTimeout(() => {
       status.textContent = "";
       status.classList.remove("success");
     }, 2000);
-  } catch (err) {
-    console.error("Fehler beim Kopieren", err);
-  }
+  } catch (err) { console.error(err); }
 }
 
 function formatText() {
@@ -186,13 +233,12 @@ function formatText() {
     if (cols.length < 5) return;
 
     const dateObj = parseGermanDate(cols[0]);
+    // Betreff säubern
     let subject = cols[4].trim().replace(/^[\d./-]+\s*/, "");
 
     if (dateObj && !isNaN(dateObj)) {
       const { year, week } = getISOWeekData(dateObj);
-      // Eindeutiger Schlüssel für Jahr + Woche (z.B. 2025-52)
       const groupKey = `${year}-${week.toString().padStart(2, '0')}`;
-      
       if (!groups[groupKey]) {
         groups[groupKey] = { year, week, entries: [] };
       }
@@ -200,15 +246,23 @@ function formatText() {
     }
   });
 
-  // Sortiere die Gruppen nach dem Jahr-Woche-Schlüssel
   const sortedKeys = Object.keys(groups).sort();
 
   const result = sortedKeys.map(key => {
     const group = groups[key];
-    // Sortiere Einträge innerhalb der Woche chronologisch
     const sortedEntries = group.entries
       .sort((a, b) => a.date - b.date)
-      .map(e => "• " + e.text) // ANSI 0149 Bullet Point
+      .map(e => {
+        let entryText = "• " + e.text;
+        
+        // VERGLEICHS-LOGIK VERBESSERT:
+        // Wir trimmen beide Texte, um unsichtbare Leerzeichen zu ignorieren
+        const cleanKey = e.text.trim();
+        if (db[cleanKey]) {
+          entryText += "\n  " + db[cleanKey];
+        }
+        return entryText;
+      })
       .join("\n");
       
     return `KW ${group.week}\n${sortedEntries}`;
