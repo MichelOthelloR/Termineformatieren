@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Terminkonvertierer</title>
+<title>Termin-Formatierer Pro</title>
 <style>
 :root {
   --bg: #0f172a;
@@ -34,19 +34,14 @@ body {
   border: 1px solid var(--border);
 }
 
-/* Header-Bereich für H1 und Logo */
 .header-area {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start; /* H1 oben ausrichten */
+  align-items: flex-start;
   margin-bottom: 20px;
 }
 
-.title-container {
-  display: flex;
-  flex-direction: column;
-}
-
+.title-container { display: flex; flex-direction: column; }
 h1 { font-size: 22px; margin: 0 0 4px 0; }
 .subtitle { color: var(--muted); font-size: 14px; margin: 0; }
 
@@ -54,7 +49,6 @@ h1 { font-size: 22px; margin: 0 0 4px 0; }
   width: 130px;
   height: 130px;
   object-fit: contain;
-  border-radius: 8px; /* Optional: leicht abgerundete Ecken */
 }
 
 .grid {
@@ -97,10 +91,7 @@ button {
   border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
-  transition: 0.2s;
 }
-
-button:hover { opacity: 0.9; }
 
 .status { font-size: 13px; font-weight: 500; }
 .status.success { color: #22c55e; }
@@ -112,19 +103,20 @@ button:hover { opacity: 0.9; }
   <div class="header-area">
     <div class="title-container">
       <h1>Terminübersicht aufbereiten</h1>
-      <div class="subtitle">Kalendereinträge werden als Übersicht nach KWs chronologisch sortiert und kopiert automatisch.</div>
+      <div class="subtitle">Chronologische Sortierung über Jahresgrenzen hinweg.</div>
     </div>
+    <img src="icon_website.png" alt="Logo" class="logo">
   </div>
 
   <div class="grid">
     <div class="box">
-      <label>Kalenderdaten hier einfügen</label>
+      <label>Eingabe (Excel-Daten)</label>
       <textarea id="input" placeholder="Hier die Tabelle einfügen..."></textarea>
     </div>
 
     <div class="box">
-      <label>Ergebnis (wird automatisch kopiert)</label>
-      <textarea id="output" readonly placeholder="KW-Übersicht wird hier generiert..."></textarea>
+      <label>Ergebnis (automatisch kopiert)</label>
+      <textarea id="output" readonly placeholder="KW-Übersicht wird generiert..."></textarea>
     </div>
   </div>
 
@@ -135,12 +127,17 @@ button:hover { opacity: 0.9; }
 </div>
 
 <script>
-function getISOWeek(date) {
+/**
+ * Ermittelt Jahr und KW nach ISO-Standard
+ */
+function getISOWeekData(date) {
   const tempDate = new Date(date.valueOf());
   tempDate.setHours(0, 0, 0, 0);
   tempDate.setDate(tempDate.getDate() + 4 - (tempDate.getDay() || 7));
-  const yearStart = new Date(tempDate.getFullYear(), 0, 1);
-  return Math.ceil((((tempDate - yearStart) / 86400000) + 1) / 7);
+  const year = tempDate.getFullYear();
+  const yearStart = new Date(year, 0, 1);
+  const week = Math.ceil((((tempDate - yearStart) / 86400000) + 1) / 7);
+  return { year, week };
 }
 
 function parseGermanDate(dateStr) {
@@ -167,7 +164,7 @@ async function copyToClipboard(text) {
       status.classList.remove("success");
     }, 2000);
   } catch (err) {
-    console.error("Kopieren fehlgeschlagen", err);
+    console.error("Fehler beim Kopieren", err);
   }
 }
 
@@ -192,21 +189,29 @@ function formatText() {
     let subject = cols[4].trim().replace(/^[\d./-]+\s*/, "");
 
     if (dateObj && !isNaN(dateObj)) {
-      const kw = getISOWeek(dateObj);
-      if (!groups[kw]) groups[kw] = [];
-      groups[kw].push({ date: dateObj, text: subject });
+      const { year, week } = getISOWeekData(dateObj);
+      // Eindeutiger Schlüssel für Jahr + Woche (z.B. 2025-52)
+      const groupKey = `${year}-${week.toString().padStart(2, '0')}`;
+      
+      if (!groups[groupKey]) {
+        groups[groupKey] = { year, week, entries: [] };
+      }
+      groups[groupKey].entries.push({ date: dateObj, text: subject });
     }
   });
 
-  const sortedKW = Object.keys(groups).map(Number).sort((a, b) => a - b);
+  // Sortiere die Gruppen nach dem Jahr-Woche-Schlüssel
+  const sortedKeys = Object.keys(groups).sort();
 
-  const result = sortedKW.map(kw => {
-    const sortedEntries = groups[kw]
+  const result = sortedKeys.map(key => {
+    const group = groups[key];
+    // Sortiere Einträge innerhalb der Woche chronologisch
+    const sortedEntries = group.entries
       .sort((a, b) => a.date - b.date)
-      .map(e => "- " + e.text)
+      .map(e => "• " + e.text) // ANSI 0149 Bullet Point
       .join("\n");
       
-    return `KW ${kw}\n${sortedEntries}`;
+    return `KW ${group.week}\n${sortedEntries}`;
   }).join("\n\n");
 
   outputField.value = result;
@@ -218,4 +223,3 @@ document.getElementById("input").addEventListener("input", formatText);
 
 </body>
 </html>
-
