@@ -2,10 +2,10 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Termin-Formatierer Pro - GitHub Version</title>
+<title>Termin-Formatierer Pro - Management Edition</title>
 <style>
 :root {
-  --bg: #0f172a; --card: #111827; --accent: #3b82f6; --text: #e5e7eb; --muted: #9ca3af; --border: #1f2933;
+  --bg: #0f172a; --card: #111827; --accent: #3b82f6; --text: #e5e7eb; --muted: #9ca3af; --border: #1f2933; --warning: #f59e0b;
 }
 * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
 body { background: var(--bg); color: var(--text); padding: 40px; display: flex; justify-content: center; }
@@ -13,12 +13,19 @@ body { background: var(--bg); color: var(--text); padding: 40px; display: flex; 
 .header-area { margin-bottom: 20px; }
 h1 { font-size: 22px; margin: 0 0 4px 0; }
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-textarea { background: #020617; color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 14px; min-height: 450px; width: 100%; font-size: 13px; line-height: 1.6; resize: vertical; outline: none; }
+textarea { background: #020617; color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 14px; min-height: 400px; width: 100%; font-size: 13px; line-height: 1.6; resize: vertical; outline: none; }
 textarea:focus { border-color: var(--accent); }
-.debug-area { margin-top: 30px; padding-top: 20px; border-top: 1px dashed var(--border); }
-#debug-output { background: #000; color: #a5f3fc; font-family: monospace; font-size: 12px; white-space: pre-wrap; padding: 15px; border-radius: 10px; max-height: 150px; overflow-y: auto; }
+
+/* Missing Entries Area */
+.missing-area { margin-top: 30px; padding: 20px; border: 1px solid var(--warning); border-radius: 12px; display: none; background: rgba(245, 158, 11, 0.05); }
+.missing-item { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+.missing-item input { background: #1e293b; border: 1px solid var(--border); color: white; padding: 8px; border-radius: 6px; flex-grow: 1; }
+
+.export-area { margin-top: 20px; display: none; }
+#export-code { background: #000; color: #34d399; font-family: monospace; font-size: 11px; padding: 15px; border-radius: 10px; overflow-x: auto; }
+
 button { background: var(--accent); border: none; color: white; padding: 12px 24px; border-radius: 10px; cursor: pointer; font-weight: 600; margin-top: 20px; }
-.status { font-size: 13px; margin-left: 15px; }
+.btn-save { background: #22c55e; margin-top: 10px; }
 label { font-size: 13px; margin-bottom: 8px; color: var(--muted); font-weight: 600; display: block; }
 </style>
 </head>
@@ -27,32 +34,34 @@ label { font-size: 13px; margin-bottom: 8px; color: var(--muted); font-weight: 6
 <div class="app">
   <div class="header-area">
     <h1>Terminübersicht aufbereiten</h1>
-    <p style="color:var(--muted)">Chronologische Sortierung | Einmalige Zusatztexte</p>
+    <p style="color:var(--muted)">Inklusive Erkennung fehlender Beschreibungen</p>
   </div>
 
   <div class="grid">
-    <div class="box"><label>Eingabe (Excel-Daten)</label><textarea id="input"></textarea></div>
-    <div class="box"><label>Ergebnis (automatisch kopiert)</label><textarea id="output" readonly></textarea></div>
+    <div class="box"><label>Eingabe</label><textarea id="input"></textarea></div>
+    <div class="box"><label>Ergebnis</label><textarea id="output" readonly></textarea></div>
   </div>
 
-  <button onclick="formatText()">Formatieren</button>
-  <span id="status" class="status"></span>
+  <button onclick="formatText()">Formatieren & Prüfen</button>
 
-  <div class="debug-area">
-    <label>Verfügbare Beschreibungen (daten.js):</label>
-    <div id="debug-output">Lade daten.js...</div>
+  <div id="missing-box" class="missing-area">
+    <h3 style="color:var(--warning); margin-top:0;">⚠️ Fehlende Beschreibungen gefunden</h3>
+    <p style="font-size:12px;">Bitte ergänze die Zusätze. Klicke dann auf "In Datenbank übernehmen", um den neuen Code für deine daten.js zu erhalten.</p>
+    <div id="missing-list"></div>
+    <button class="btn-save" onclick="updateDatabase()">In Datenbank übernehmen</button>
+  </div>
+
+  <div id="export-box" class="export-area">
+    <label>Kopiere diesen Text in deine <b>daten.js</b> auf GitHub:</label>
+    <pre id="export-code"></pre>
   </div>
 </div>
 
 <script type="module">
-  // Import der Datenbank
   import { BESCHREIBUNGEN_DB } from './daten.js';
 
-  // Debug-Anzeige beim Start
-  const debugOut = document.getElementById('debug-output');
-  if (typeof BESCHREIBUNGEN_DB !== 'undefined') {
-      debugOut.textContent = JSON.stringify(BESCHREIBUNGEN_DB, null, 4);
-  }
+  // Lokale Kopie der DB zum Arbeiten
+  let localDB = { ...BESCHREIBUNGEN_DB };
 
   function getISOWeekData(date) {
     const tempDate = new Date(date.valueOf());
@@ -65,30 +74,22 @@ label { font-size: 13px; margin-bottom: 8px; color: var(--muted); font-weight: 6
   }
 
   function parseGermanDate(dateStr) {
-    if (!dateStr) return null;
     const parts = dateStr.trim().split('.');
-    if (parts.length === 3) {
-      let year = parts[2].trim();
-      if (year.length === 2) year = "20" + year;
-      return new Date(year, parts[1] - 1, parts[0]);
-    }
-    return null;
+    return parts.length === 3 ? new Date((parts[2].length === 2 ? "20"+parts[2] : parts[2]), parts[1] - 1, parts[0]) : null;
   }
 
-  window.formatText = async function() {
+  window.formatText = function() {
     const input = document.getElementById("input").value.trim();
     if (!input) return;
 
     const rows = input.split(/\r?\n/);
     const groups = {};
-    
-    // Set zur Nachverfolgung bereits verwendeter Beschreibungen
     const usedDescriptions = new Set();
+    const missing = new Set();
 
     rows.forEach(row => {
       const cols = row.split("\t");
       if (cols.length < 5) return;
-
       const dateObj = parseGermanDate(cols[0]);
       let subject = cols[4].trim().replace(/^[\d./-]+\s*/, "");
 
@@ -97,42 +98,75 @@ label { font-size: 13px; margin-bottom: 8px; color: var(--muted); font-weight: 6
         const groupKey = `${year}-${week.toString().padStart(2, '0')}`;
         if (!groups[groupKey]) groups[groupKey] = { week, entries: [] };
         groups[groupKey].entries.push({ date: dateObj, text: subject });
+        
+        // Prüfen ob Beschreibung fehlt
+        if (!localDB[subject]) {
+          missing.add(subject);
+        }
       }
     });
 
-    const sortedKeys = Object.keys(groups).sort();
-
-    const result = sortedKeys.map(key => {
+    // Ergebnis generieren
+    const result = Object.keys(groups).sort().map(key => {
       const g = groups[key];
       const lines = g.entries.sort((a,b) => a.date - b.date).map(e => {
         let line = "• " + e.text;
-        const cleanSubject = e.text.trim();
-
-        // Logik: Nur ergänzen, wenn in daten.js vorhanden UND noch nicht zuvor verwendet
-        if (BESCHREIBUNGEN_DB[cleanSubject] && !usedDescriptions.has(cleanSubject)) {
-          line += "\n  " + BESCHREIBUNGEN_DB[cleanSubject];
-          usedDescriptions.add(cleanSubject); // Als verwendet markieren
+        if (localDB[e.text] && !usedDescriptions.has(e.text)) {
+          line += "\n  " + localDB[e.text];
+          usedDescriptions.add(e.text);
         }
-        
         return line;
       }).join("\n");
       return `KW ${g.week}\n${lines}`;
     }).join("\n\n");
 
     document.getElementById("output").value = result;
-    
-    try {
-      await navigator.clipboard.writeText(result);
-      const status = document.getElementById("status");
-      status.textContent = "✔ Kopiert";
-      status.style.color = "#22c55e";
-      setTimeout(() => status.textContent = "", 2000);
-    } catch (err) {
-      console.error("Copy failed", err);
+    navigator.clipboard.writeText(result);
+
+    // Fehlende Einträge anzeigen
+    const missingBox = document.getElementById("missing-box");
+    const missingList = document.getElementById("missing-list");
+    if (missing.size > 0) {
+      missingList.innerHTML = "";
+      missing.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "missing-item";
+        div.innerHTML = `<span style="min-width:150px; font-size:12px;">${item}:</span>
+                         <input type="text" placeholder="Zusatz: ..." data-subject="${item}">`;
+        missingList.appendChild(div);
+      });
+      missingBox.style.display = "block";
+    } else {
+      missingBox.style.display = "none";
     }
   };
 
-  document.getElementById("input").addEventListener("input", window.formatText);
+  window.updateDatabase = function() {
+    const inputs = document.querySelectorAll("#missing-list input");
+    inputs.forEach(inp => {
+      if (inp.value.trim() !== "") {
+        localDB[inp.getAttribute("data-subject")] = inp.value.trim();
+      }
+    });
+
+    // Export Code generieren
+    const exportBox = document.getElementById("export-box");
+    const exportCode = document.getElementById("export-code");
+    
+    let codeString = "export const BESCHREIBUNGEN_DB = {\n";
+    const keys = Object.keys(localDB).sort();
+    keys.forEach((k, index) => {
+      const comma = index === keys.length - 1 ? "" : ",";
+      codeString += `  "${k}": "${localDB[k].replace(/"/g, '\\"')}"${comma}\n`;
+    });
+    codeString += "};";
+
+    exportCode.textContent = codeString;
+    exportBox.style.display = "block";
+    
+    // Nochmals formatieren mit neuen Daten
+    window.formatText();
+  };
 </script>
 
 </body>
