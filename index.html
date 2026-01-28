@@ -2,8 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Schnelle Textformatierung</title>
-<link rel="icon" type="image/png" sizes="64x64" href="icon_website64.png">
+<title>Termin-Formatierer Pro</title>
 <style>
 :root {
   --bg: #0f172a;
@@ -14,13 +13,10 @@
   --border: #1f2933;
 }
 
-* {
-  box-sizing: border-box;
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-}
+* { box-sizing: border-box; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
 
 body {
-  background: linear-gradient(135deg, #020617, #020617);
+  background: var(--bg);
   color: var(--text);
   margin: 0;
   padding: 40px;
@@ -33,193 +29,192 @@ body {
   max-width: 1000px;
   background: var(--card);
   border-radius: 16px;
-  padding: 24px 28px 28px;
+  padding: 28px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
   border: 1px solid var(--border);
 }
 
-h1 {
-  font-size: 22px;
-  margin-bottom: 4px;
+/* Header-Bereich für H1 und Logo */
+.header-area {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start; /* H1 oben ausrichten */
+  margin-bottom: 20px;
 }
 
-.subtitle {
-  color: var(--muted);
-  font-size: 14px;
-  margin-bottom: 20px;
+.title-container {
+  display: flex;
+  flex-direction: column;
+}
+
+h1 { font-size: 22px; margin: 0 0 4px 0; }
+.subtitle { color: var(--muted); font-size: 14px; margin: 0; }
+
+.logo {
+  width: 130px;
+  height: 130px;
+  object-fit: contain;
+  border-radius: 8px; /* Optional: leicht abgerundete Ecken */
 }
 
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 20px;
 }
 
-.box {
-  display: flex;
-  flex-direction: column;
-}
-
-label {
-  font-size: 13px;
-  margin-bottom: 6px;
-  color: var(--muted);
-}
+.box { display: flex; flex-direction: column; }
+label { font-size: 13px; margin-bottom: 8px; color: var(--muted); font-weight: 600; }
 
 textarea {
   background: #020617;
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 12px;
-  min-height: 220px;
+  padding: 14px;
+  min-height: 350px;
   resize: vertical;
   outline: none;
   transition: 0.2s;
-  font-size: 14px;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
-textarea:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
-}
+textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
 
 .actions {
   display: flex;
   align-items: center;
-  margin-top: 14px;
-  gap: 10px;
+  margin-top: 20px;
+  gap: 15px;
 }
 
 button {
   background: var(--accent);
   border: none;
   color: white;
-  padding: 10px 16px;
+  padding: 12px 24px;
   border-radius: 10px;
-  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  transition: 0.15s;
+  transition: 0.2s;
 }
 
-button:hover {
-  opacity: 0.9;
-}
+button:hover { opacity: 0.9; }
 
-.status {
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.status.success {
-  color: #22c55e;
-}
+.status { font-size: 13px; font-weight: 500; }
+.status.success { color: #22c55e; }
 </style>
 </head>
 <body>
 
 <div class="app">
-  <h1>Terminübersicht aufbereiten</h1>
-  <div class="subtitle">Füge hier die Terminübersicht ein → automatisch formatiert & kopiert</div>
+  <div class="header-area">
+    <div class="title-container">
+      <h1>Terminübersicht aufbereiten</h1>
+      <div class="subtitle">Kalendereinträge werden als Übersicht nach KWs chronologisch sortiert und kopiert automatisch.</div>
+    </div>
+  </div>
 
   <div class="grid">
     <div class="box">
-      <label>Excel-Daten (Copy & Paste)</label>
-      <textarea id="input" placeholder="Beginn Datum - Beginn Uhrzeit - Ende Datum - Ende Uhrzeit - Betreff - Aktion"></textarea>
+      <label>Kalenderdaten hier einfügen</label>
+      <textarea id="input" placeholder="Hier die Tabelle einfügen..."></textarea>
     </div>
 
     <div class="box">
-      <label>Ergebnis (automatisch kopiert)</label>
-      <textarea id="output" placeholder="KW ...
--Betreff
-
-KW ...
--Betreff" readonly></textarea>
+      <label>Ergebnis (wird automatisch kopiert)</label>
+      <textarea id="output" readonly placeholder="KW-Übersicht wird hier generiert..."></textarea>
     </div>
+  </div>
 
   <div class="actions">
-    <button onclick="formatText()">Formatieren</button>
+    <button onclick="formatText()">Manuell Formatieren</button>
     <div id="status" class="status"></div>
   </div>
 </div>
 
 <script>
 function getISOWeek(date) {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const dayNum = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  const tempDate = new Date(date.valueOf());
+  tempDate.setHours(0, 0, 0, 0);
+  tempDate.setDate(tempDate.getDate() + 4 - (tempDate.getDay() || 7));
+  const yearStart = new Date(tempDate.getFullYear(), 0, 1);
+  return Math.ceil((((tempDate - yearStart) / 86400000) + 1) / 7);
+}
+
+function parseGermanDate(dateStr) {
+  if (!dateStr) return null;
+  const parts = dateStr.trim().split('.');
+  if (parts.length === 3) {
+    let year = parts[2].trim();
+    if (year.length === 2) year = "20" + year;
+    return new Date(year, parts[1] - 1, parts[0]);
+  }
+  const isoDate = new Date(dateStr);
+  return isNaN(isoDate) ? null : isoDate;
 }
 
 async function copyToClipboard(text) {
+  if (!text) return;
   try {
     await navigator.clipboard.writeText(text);
     const status = document.getElementById("status");
-    status.textContent = "✔ Text automatisch kopiert";
+    status.textContent = "✔ In Zwischenablage kopiert";
     status.classList.add("success");
     setTimeout(() => {
       status.textContent = "";
       status.classList.remove("success");
     }, 2000);
   } catch (err) {
-    console.error("Copy failed:", err);
+    console.error("Kopieren fehlgeschlagen", err);
   }
 }
 
 function formatText() {
   const input = document.getElementById("input").value.trim();
-  if (!input) return;
-
-  const rows = input.split("\n");
-  let entries = [];
-
-  for (let row of rows) {
-    const cols = row.split("\t");
-    if (cols.length < 5) continue;
-
-    const dateStr = cols[0].trim();
-    const subjectRaw = cols[4].trim();
-
-    const date = new Date(dateStr);
-    if (isNaN(date)) continue;
-
-    let subject = subjectRaw.includes(" ")
-      ? subjectRaw.substring(subjectRaw.indexOf(" ") + 1)
-      : subjectRaw;
-
-    const kw = getISOWeek(date);
-
-    entries.push({ kw, subject });
+  const outputField = document.getElementById("output");
+  
+  if (!input) {
+    outputField.value = "";
+    return;
   }
 
+  const rows = input.split(/\r?\n/);
   const groups = {};
-  for (let e of entries) {
-    if (!groups[e.kw]) groups[e.kw] = [];
-    groups[e.kw].push(e.subject);
-  }
+
+  rows.forEach(row => {
+    if (!row.trim()) return;
+    const cols = row.split("\t");
+    if (cols.length < 5) return;
+
+    const dateObj = parseGermanDate(cols[0]);
+    let subject = cols[4].trim().replace(/^[\d./-]+\s*/, "");
+
+    if (dateObj && !isNaN(dateObj)) {
+      const kw = getISOWeek(dateObj);
+      if (!groups[kw]) groups[kw] = [];
+      groups[kw].push({ date: dateObj, text: subject });
+    }
+  });
 
   const sortedKW = Object.keys(groups).map(Number).sort((a, b) => a - b);
 
-  let result = sortedKW.map(kw => {
-    const lines = groups[kw].map(s => "- " + s).join("\n");
-    return "KW " + kw + "\n" + lines;
+  const result = sortedKW.map(kw => {
+    const sortedEntries = groups[kw]
+      .sort((a, b) => a.date - b.date)
+      .map(e => "- " + e.text)
+      .join("\n");
+      
+    return `KW ${kw}\n${sortedEntries}`;
   }).join("\n\n");
 
-  const output = document.getElementById("output");
-  output.value = result;
-
-  copyToClipboard(result);
+  outputField.value = result;
+  if (result) copyToClipboard(result);
 }
 
-// Bonus: Auto-Format beim Einfügen
-document.getElementById("input").addEventListener("input", () => {
-  formatText();
-});
+document.getElementById("input").addEventListener("input", formatText);
 </script>
 
 </body>
 </html>
-
-
-
