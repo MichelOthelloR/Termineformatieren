@@ -1,5 +1,5 @@
 // Datenbank der Modulbeschreibungen (Zusatztexte)
-const BESCHREIBUNGEN_DB = {
+export const BESCHREIBUNGEN_DB = {
   "Aktivierung": "Zusatz: Lebenslauf aufbereiten, Zugangsdaten EsoJob vermitteln und Teilnehmer im Projekt positionieren.",
   "Infoveranstaltung „Bali“": "Zusatz: Den Kunden über das Projekt informieren und anleiten sich aktiv im Projekt „BALI“ zu bewegen.",
   "Aktivierung Exklusiv": "Zusatz: Lebenslauf aufbereiten, Zugangsdaten EsoJob vermitteln und Teilnehmer im Projekt positionieren.",
@@ -45,3 +45,4 @@ const BESCHREIBUNGEN_DB = {
   "Zeitmanagement": "Zusatz: Vereinbarkeit von Beruf und Familie sowie individuelle Parameter zur Umstellung.",
   "Zeitmanagement / Stressmanagement": "Zusatz: Umgang mit Deadlines und Familienalltag zur Vermeidung von Burnout."
 };
+
